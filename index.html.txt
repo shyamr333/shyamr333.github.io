@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title> PRACTICAL MACHINE LEARNING PROJECT</title>
+</head>
+
+<body>
+
+<p>
+
+<h1> PRACTICAL MACHINE LEARNING FINAL PROJECT </h1>
+<h4> Shyam Rajgarhia </h4>
+
+<h1>Assignment Background </h1>
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website <a href = "http://groupware.les.inf.puc-rio.br/har"> here: </a> From the section on the Weight Lifting Exercise Dataset the following further information is available:
+
+
+
+Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
+
+</p>
+
+<p>
+
+<h3> Cross Validation </h3>
+
+As we have a large Training data set, our cross-validation will be done by splitting our original training set into 2 subsets (randomly without replacement): TrainSet (70%) and CrossValidSet (30%). The random forest model will be developed using the TrainSet, and then tested on the CrossValidSet. Then the most accurate model choosen will be tested on the original 'testing' data set, which has precisely 20 observations.The first model tested was Random Forest and it gave a decent level of accuracy on the CrossValidSet (99.24%). Therefore, that model was chosen
+
+</p>
+
+<p>
+
+<h3>Importing the necessary packages</h3>
+
+<!--begin.rcode
+library(caret) 
+library(randomForest)
+end.rcode-->
+
+
+</p>
+
+<p> 
+
+<h3> Getting and Preparing Data </h3>
+
+The training data is available <a href = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"> here. </a>
+
+The testing data is available <a href = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"> here. </a>
+
+<!--begin.rcode
+
+#download the training and test sets in your local directory before implementing the following code
+
+training <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+
+#finding and remving variables which have very low variance
+
+NZV <- nearZeroVar(training)
+training <- training[,-NZV]
+testing <- testing[, - NZV]
+
+end.rcode-->
+
+</p>
+
+<p>
+
+By implmenting the following code, we see that every column in the dataset has either 0 NA values or 19216 NA values, which is more than 97% of the values. Therefore, we will only consider those columns which have 0 NA values.
+
+<!--begin.rcode
+table(colSums(is.na(training)))
+end.rcode-->
+
+<!--begin.rcode
+goodCols <- colSums(is.na(training)) == 0
+training <- training[, goodCols]
+testing <- testing[,goodCols]
+
+#remove the first 7 columns, which do not make intuitive sense for prediction purposes.
+
+training <- training[, -c(1:7)]
+testing <- testing[, -c(1:7)]
+
+end.rcode-->
+
+Now we have our training and test sets, with only the pertinent variables. Now we will divide the training set for cross validation purposes
+
+<!--begin.rcode
+inTrain <- createDataPartition(training$classe, p = 0.7, list = FALSE)
+TrainSet <- training[inTrain,]
+CrossValidSet <- training[-inTrain,]
+dim(TrainSet)
+dim(CrossValidSet)
+end.rcode-->
+
+</p>
+
+<p> 
+
+<h3> Modelling </h3>
+We implement a Random Forest model
+
+<!--begin.rcode
+modelFit <- randomForest(classe ~., data = TrainSet, method = 'class')
+end.rcode-->
+
+Now we use this model to predict on the CrossValidSet and ascertain the accuracy
+
+<!--begin.rcode
+prediction <- predict(modelFit,CrossValidSet, type = 'class')
+confusionMatrix(prediction, CrossValidSet$classe)
+end.rcode-->
+
+<br>
+
+As we can see, we have 99.35 percent accuracy i.e. out of sample error is 0.65. This is good enough to use and therefore, we do not try any other model. Now, we simply predict the values for the original testing data set.
+
+<!--begin.rcode
+final_prediction <- predict(modelFit, testing, type = 'class')
+final_prediction
+end.rcode-->
+</body>
+</html>
