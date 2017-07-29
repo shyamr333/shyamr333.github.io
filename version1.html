@@ -1,0 +1,252 @@
+<html>
+
+<head>
+<style type="text/css">
+.knitr .inline {
+  background-color: #f7f7f7;
+  border:solid 1px #B0B0B0;
+}
+.error {
+	font-weight: bold;
+	color: #FF0000;
+}
+.warning {
+	font-weight: bold;
+}
+.message {
+	font-style: italic;
+}
+.source, .output, .warning, .error, .message {
+	padding: 0 1em;
+  border:solid 1px #F7F7F7;
+}
+.source {
+  background-color: #f5f5f5;
+}
+.rimage .left {
+  text-align: left;
+}
+.rimage .right {
+  text-align: right;
+}
+.rimage .center {
+  text-align: center;
+}
+.hl.num {
+  color: #AF0F91;
+}
+.hl.str {
+  color: #317ECC;
+}
+.hl.com {
+  color: #AD95AF;
+  font-style: italic;
+}
+.hl.opt {
+  color: #000000;
+}
+.hl.std {
+  color: #585858;
+}
+.hl.kwa {
+  color: #295F94;
+  font-weight: bold;
+}
+.hl.kwb {
+  color: #B05A65;
+}
+.hl.kwc {
+  color: #55aa55;
+}
+.hl.kwd {
+  color: #BC5A65;
+  font-weight: bold;
+}
+</style>
+<title> PRACTICAL MACHINE LEARNING PROJECT</title>
+</head>
+
+<body>
+
+<p>
+
+<h1> PRACTICAL MACHINE LEARNING FINAL PROJECT </h1>
+<h4> Shyam Rajgarhia </h4>
+
+<h1>Assignment Background </h1>
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website <a href = "http://groupware.les.inf.puc-rio.br/har"> here: </a> From the section on the Weight Lifting Exercise Dataset the following further information is available:
+
+
+
+Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
+
+</p>
+
+<p>
+
+<h3> Cross Validation </h3>
+
+As we have a large Training data set, our cross-validation will be done by splitting our original training set into 2 subsets (randomly without replacement): TrainSet (70%) and CrossValidSet (30%). The random forest model will be developed using the TrainSet, and then tested on the CrossValidSet. Then the most accurate model choosen will be tested on the original 'testing' data set, which has precisely 20 observations.The first model tested was Random Forest and it gave a decent level of accuracy on the CrossValidSet (99.24%). Therefore, that model was chosen
+
+</p>
+
+<p>
+
+<h3>Importing the necessary packages</h3>
+
+<div class="chunk" id="unnamed-chunk-1"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(caret)</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: package 'caret' was built under R version 3.4.1
+</pre></div>
+<div class="message"><pre class="knitr r">## Loading required package: lattice
+</pre></div>
+<div class="message"><pre class="knitr r">## Loading required package: ggplot2
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: package 'ggplot2' was built under R version 3.4.1
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(randomForest)</span>
+</pre></div>
+<div class="warning"><pre class="knitr r">## Warning: package 'randomForest' was built under R version 3.4.1
+</pre></div>
+<div class="message"><pre class="knitr r">## randomForest 4.6-12
+</pre></div>
+<div class="message"><pre class="knitr r">## Type rfNews() to see new features/changes/bug fixes.
+</pre></div>
+<div class="message"><pre class="knitr r">## 
+## Attaching package: 'randomForest'
+</pre></div>
+<div class="message"><pre class="knitr r">## The following object is masked from 'package:ggplot2':
+## 
+##     margin
+</pre></div>
+</div></div>
+
+
+</p>
+
+<p> 
+
+<h3> Getting and Preparing Data </h3>
+
+The training data is available <a href = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"> here. </a>
+
+The testing data is available <a href = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"> here. </a>
+
+<div class="chunk" id="unnamed-chunk-2"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl com">#download the training and test sets in your local directory before implementing the following code</span>
+
+<span class="hl std">training</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">read.csv</span><span class="hl std">(</span><span class="hl str">&quot;pml-training.csv&quot;</span><span class="hl std">)</span>
+<span class="hl std">testing</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">read.csv</span><span class="hl std">(</span><span class="hl str">&quot;pml-testing.csv&quot;</span><span class="hl std">)</span>
+
+<span class="hl com">#finding and remving variables which have very low variance</span>
+
+<span class="hl std">NZV</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">nearZeroVar</span><span class="hl std">(training)</span>
+<span class="hl std">training</span> <span class="hl kwb">&lt;-</span> <span class="hl std">training[,</span><span class="hl opt">-</span><span class="hl std">NZV]</span>
+<span class="hl std">testing</span> <span class="hl kwb">&lt;-</span> <span class="hl std">testing[,</span> <span class="hl opt">-</span> <span class="hl std">NZV]</span>
+</pre></div>
+</div></div>
+
+</p>
+
+<p>
+
+By implmenting the following code, we see that every column in the dataset has either 0 NA values or 19216 NA values, which is more than 97% of the values. Therefore, we will only consider those columns which have 0 NA values.
+
+<div class="chunk" id="unnamed-chunk-3"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">table</span><span class="hl std">(</span><span class="hl kwd">colSums</span><span class="hl std">(</span><span class="hl kwd">is.na</span><span class="hl std">(training)))</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## 
+##     0 19216 
+##    59    41
+</pre></div>
+</div></div>
+
+<div class="chunk" id="unnamed-chunk-4"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">goodCols</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">colSums</span><span class="hl std">(</span><span class="hl kwd">is.na</span><span class="hl std">(training))</span> <span class="hl opt">==</span> <span class="hl num">0</span>
+<span class="hl std">training</span> <span class="hl kwb">&lt;-</span> <span class="hl std">training[, goodCols]</span>
+<span class="hl std">testing</span> <span class="hl kwb">&lt;-</span> <span class="hl std">testing[,goodCols]</span>
+
+<span class="hl com">#remove the first 7 columns, which do not make intuitive sense for prediction purposes.</span>
+
+<span class="hl std">training</span> <span class="hl kwb">&lt;-</span> <span class="hl std">training[,</span> <span class="hl opt">-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl opt">:</span><span class="hl num">7</span><span class="hl std">)]</span>
+<span class="hl std">testing</span> <span class="hl kwb">&lt;-</span> <span class="hl std">testing[,</span> <span class="hl opt">-</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl opt">:</span><span class="hl num">7</span><span class="hl std">)]</span>
+</pre></div>
+</div></div>
+
+Now we have our training and test sets, with only the pertinent variables. Now we will divide the training set for cross validation purposes
+
+<div class="chunk" id="unnamed-chunk-5"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">inTrain</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">createDataPartition</span><span class="hl std">(training</span><span class="hl opt">$</span><span class="hl std">classe,</span> <span class="hl kwc">p</span> <span class="hl std">=</span> <span class="hl num">0.7</span><span class="hl std">,</span> <span class="hl kwc">list</span> <span class="hl std">=</span> <span class="hl num">FALSE</span><span class="hl std">)</span>
+<span class="hl std">TrainSet</span> <span class="hl kwb">&lt;-</span> <span class="hl std">training[inTrain,]</span>
+<span class="hl std">CrossValidSet</span> <span class="hl kwb">&lt;-</span> <span class="hl std">training[</span><span class="hl opt">-</span><span class="hl std">inTrain,]</span>
+<span class="hl kwd">dim</span><span class="hl std">(TrainSet)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## [1] 13737    52
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl kwd">dim</span><span class="hl std">(CrossValidSet)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## [1] 5885   52
+</pre></div>
+</div></div>
+
+</p>
+
+<p> 
+
+<h3> Modelling </h3>
+We implement a Random Forest model
+
+<div class="chunk" id="unnamed-chunk-6"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">modelFit</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">randomForest</span><span class="hl std">(classe</span> <span class="hl opt">~</span><span class="hl std">.,</span> <span class="hl kwc">data</span> <span class="hl std">= TrainSet,</span> <span class="hl kwc">method</span> <span class="hl std">=</span> <span class="hl str">'class'</span><span class="hl std">)</span>
+</pre></div>
+</div></div>
+
+Now we use this model to predict on the CrossValidSet and ascertain the accuracy
+
+<div class="chunk" id="unnamed-chunk-7"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">prediction</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">predict</span><span class="hl std">(modelFit,CrossValidSet,</span> <span class="hl kwc">type</span> <span class="hl std">=</span> <span class="hl str">'class'</span><span class="hl std">)</span>
+<span class="hl kwd">confusionMatrix</span><span class="hl std">(prediction, CrossValidSet</span><span class="hl opt">$</span><span class="hl std">classe)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1674    7    0    0    0
+##          B    0 1131    9    0    0
+##          C    0    1 1015   16    1
+##          D    0    0    2  948    2
+##          E    0    0    0    0 1079
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.9935          
+##                  95% CI : (0.9911, 0.9954)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.9918          
+##  Mcnemar's Test P-Value : NA              
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            1.0000   0.9930   0.9893   0.9834   0.9972
+## Specificity            0.9983   0.9981   0.9963   0.9992   1.0000
+## Pos Pred Value         0.9958   0.9921   0.9826   0.9958   1.0000
+## Neg Pred Value         1.0000   0.9983   0.9977   0.9968   0.9994
+## Prevalence             0.2845   0.1935   0.1743   0.1638   0.1839
+## Detection Rate         0.2845   0.1922   0.1725   0.1611   0.1833
+## Detection Prevalence   0.2856   0.1937   0.1755   0.1618   0.1833
+## Balanced Accuracy      0.9992   0.9955   0.9928   0.9913   0.9986
+</pre></div>
+</div></div>
+
+<br>
+
+As we can see, we have 99.35 percent accuracy i.e. out of sample error is 0.65. This is good enough to use and therefore, we do not try any other model. Now, we simply predict the values for the original testing data set.
+
+<div class="chunk" id="unnamed-chunk-8"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">final_prediction</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">predict</span><span class="hl std">(modelFit, testing,</span> <span class="hl kwc">type</span> <span class="hl std">=</span> <span class="hl str">'class'</span><span class="hl std">)</span>
+<span class="hl std">final_prediction</span>
+</pre></div>
+<div class="output"><pre class="knitr r">##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
+## Levels: A B C D E
+</pre></div>
+</div></div>
+</body>
+</html>
